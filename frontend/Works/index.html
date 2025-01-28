@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trainer Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="login-container">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+    </div>
+    
+    <div id="dashboard" style="display: none;">
+        <h1>Trainer Dashboard</h1>
+        <button onclick="showTab('availability')">Trainer Availability</button>
+        <button onclick="showTab('sessions')">Session Management</button>
+
+        <div id="availability" class="tab-content">
+            <h2>Set Trainer Availability</h2>
+            <button onclick="saveAvailability()">Save Availability</button>
+            <div id="availability-calendar"></div>
+        </div>
+
+<div id="sessions" class="tab-content" style="display: none;">
+    <h2>Upcoming Sessions</h2>
+    <div id="session-list"></div>
+
+    <h3>Assign Participants</h3>
+    <ul id="participant-list"></ul>
+
+    <h3>Punching Bag Stations</h3>
+    <div id="stations">
+        <!-- 20 stations dynamically generated -->
+        <script>
+            for (let i = 1; i <= 20; i++) {
+                document.write(`<div class="station" data-id="${i}">Station ${i}</div>`);
+            }
+        </script>
+    </div>
+
+    <button onclick="startSession()">Start Session</button>
+</div>
+    <script src="script.js"></script>
+</body>
+</html>
