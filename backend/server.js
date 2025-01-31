@@ -1,30 +1,30 @@
 const express = require("express");
-const express = require("express");
 const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
 
-// ✅ This part is critical
+// IMPORTANT: This EXACT config is needed
 app.use(cors({
-  origin: "https://powerboxing.fun",
-  methods: "GET,POST,PUT,DELETE,OPTIONS",
+  origin: "https://powerboxing.fun",  // <== EXACT domain
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use(express.json());
 
-// Example route
+// Test route
 app.get("/", (req, res) => {
-  res.send("Trainer Backend is running!");
+  res.send("✅ Trainer Backend is running with correct CORS!");
 });
 
-// Save Availability route
+// SAVE AVAILABILITY
 app.post("/saveAvailability", (req, res) => {
-  console.log("Got availability:", req.body);
-  // Here is where you'd actually store in MongoDB
+  console.log("Received availability data:", req.body);
+  // Here you would store data in MongoDB; for now, just send success:
   res.json({ message: "Availability saved successfully!" });
 });
 
+// Start server
 app.listen(port, () => {
-  console.log(`Backend running on port ${port}`);
+  console.log(`✅ Server running on port ${port}`);
 });
