@@ -7,28 +7,19 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Trainer Dashboard</h1>
-        
-        <!-- Navigation Buttons -->
-        <div class="nav-buttons">
-            <button id="availabilityTab" class="tab-button">Trainer Availability</button>
-            <button id="sessionsTab" class="tab-button">Session Management</button>
-        </div>
+    <h1>Trainer Dashboard</h1>
+    <button id="availability-tab">Trainer Availability</button>
+    <button id="sessions-tab">Session Management</button>
 
-        <!-- Availability Section -->
-        <div id="availabilitySection" class="tab-content">
-            <h2>Set Trainer Availability</h2>
-            <button id="saveAvailability" class="save-button">Save Availability</button>
-            <div id="availabilityCalendar"></div>
-        </div>
+    <div id="availability-section">
+        <h2>Set Trainer Availability</h2>
+        <button id="saveAvailability">Save Availability</button>
+        <div id="availability-calendar"></div>
+    </div>
 
-        <!-- Session Management Section -->
-        <div id="sessionsSection" class="tab-content" style="display: none;">
-            <h2>Session Management</h2>
-            <div id="sessionList"></div>
-            <button id="startSession" class="start-button">Start Selected Session</button>
-        </div>
+    <div id="sessions-section" style="display: none;">
+        <h2>Session Management</h2>
+        <div id="session-list"></div>
     </div>
 
     <script src="script.js"></script>
