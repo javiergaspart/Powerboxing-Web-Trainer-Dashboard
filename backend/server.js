@@ -1,29 +1,85 @@
 const express = require("express");
 const cors = require("cors");
-const app = express();
-const port = process.env.PORT || 3000;
+const mongoose = require("mongoose");
+require("dotenv").config({ path: "./.env" });
 
+const app = express();
+const PORT = process.env.PORT || 10000;
+
+// ✅ Enable CORS for the frontend
+const corsOptions = {
+    origin: "https://powerboxing.fun", // Ensure this is the correct frontend URL
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    credentials: true,
+    optionsSuccessStatus: 204,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
-// CRUCIAL: EXACT CORS config
-app.use(cors({
-  origin: "https://powerboxing.fun",
-  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
-  allowedHeaders: ["Content-Type","Authorization"]
-}));
+// ✅ MongoDB Connection
+const MONGO_URI = process.env.MONGO_URI || "your-mongodb-connection-string";
+mongoose.connect(MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() => console.log("✅ Connected to MongoDB"))
+.catch(err => console.error("❌ MongoDB Connection Error:", err));
 
-// Test route
-app.get("/", (req, res) => {
-  res.send("✅ Trainer Backend is running with correct CORS!");
+// ✅ Define Trainer Availability Schema
+const trainerAvailabilitySchema = new mongoose.Schema({
+    trainerId: String,
+    availability: Array,
+    updatedAt: { type: Date, default: Date.now }
 });
 
-// Save Availability
-app.post("/saveAvailability", (req, res) => {
-  console.log("Got availability:", req.body);
-  // Normally store in MongoDB
-  res.json({ message: "Availability saved successfully!" });
+const TrainerAvailability = mongoose.model("TrainerAvailability", trainerAvailabilitySchema);
+
+// ✅ Health Check Endpoint
+app.get("/api/status", (req, res) => {
+    res.json({ status: "ok" });
 });
 
-app.listen(port, () => {
-  console.log(`Backend running on port ${port}`);
+// ✅ Save Trainer Availability
+app.post("/saveAvailability", async (req, res) => {
+    try {
+        const { trainerId, availability } = req.body;
+        if (!trainerId || !availability) {
+            return res.status(400).json({ error: "Trainer ID and availability are required." });
+        }
+
+        // Save or update availability in MongoDB
+        const result = await TrainerAvailability.findOneAndUpdate(
+            { trainerId },
+            { availability, updatedAt: new Date() },
+            { upsert: true, new: true }
+        );
+
+        console.log("✅ Availability updated:", result);
+        res.json({ success: true, message: "Availability saved successfully!", data: result });
+    } catch (error) {
+        console.error("❌ Error saving availability:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+// ✅ Get Trainer Availability
+app.get("/getAvailability/:trainerId", async (req, res) => {
+    try {
+        const trainerId = req.params.trainerId;
+        const availability = await TrainerAvailability.findOne({ trainerId });
+
+        if (!availability) {
+            return res.status(404).json({ error: "No availability found for this trainer." });
+        }
+
+        res.json(availability);
+    } catch (error) {
+        console.error("❌ Error fetching availability:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+// ✅ Start Server
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
