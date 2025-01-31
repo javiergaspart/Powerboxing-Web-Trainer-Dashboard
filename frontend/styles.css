@@ -4,35 +4,43 @@ body {
 }
 
 h1 {
-    font-size: 24px;
+    color: black;
 }
 
 button {
     background-color: green;
     color: white;
-    border: none;
     padding: 10px;
-    margin: 5px;
+    border: none;
     cursor: pointer;
+    margin: 10px;
 }
 
-#availability-calendar {
+button:hover {
+    background-color: darkgreen;
+}
+
+#calendar {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    margin-top: 20px;
 }
 
 .time-slot {
-    display: inline-block;
     width: 50px;
-    padding: 5px;
+    height: 30px;
     margin: 5px;
-    border: 1px solid black;
     text-align: center;
+    line-height: 30px;
     cursor: pointer;
+    background-color: lightgray;
 }
 
 .time-slot.available {
     background-color: lightgreen;
+}
+
+.time-slot.past {
+    background-color: gray;
+    pointer-events: none;
 }
