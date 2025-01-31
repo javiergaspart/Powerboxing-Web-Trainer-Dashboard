@@ -3,25 +3,24 @@ const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(express.json());
-
-// ✅ This is the CRUCIAL PART:
+// ✅ MUST specify your exact domain
 app.use(cors({
-    origin: "https://powerboxing.fun", // EXACT domain of your frontend
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+  origin: "https://powerboxing.fun",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-// Sample route to confirm
+app.use(express.json());
+
 app.post("/saveAvailability", (req, res) => {
-    console.log("Got availability data:", req.body);
-    res.json({ message: "Availability saved successfully!" });
+  console.log("Received availability:", req.body);
+  res.json({ message: "Availability saved successfully!" });
 });
 
 app.get("/", (req, res) => {
-    res.send("Backend is running!");
+  res.send("Backend is running fine!");
 });
 
 app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });
