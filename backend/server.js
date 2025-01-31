@@ -1,80 +1,78 @@
-const express = require('express');
-const cors = require('cors');
-const { MongoClient, ObjectId } = require('mongodb');
+const express = require("express");
+const cors = require("cors");
+const mongoose = require("mongoose");
+require("dotenv").config();
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+const PORT = process.env.PORT || 5000;
 
-const mongoUri = 'mongodb+srv://fitboxing_admin:Powerboxing123@cluster0.nrz2j.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-const client = new MongoClient(mongoUri);
-let db;
+// ✅ CORS Configuration: Allow frontend (Trainer Portal) to access backend
+const corsOptions = {
+  origin: "https://powerboxing.fun", // ✅ Set to your frontend domain
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  allowedHeaders: "Content-Type, Authorization"
+};
 
-async function connectToDatabase() {
-    try {
-        await client.connect();
-        db = client.db('powerboxing');
-        console.log('✅ Connected to MongoDB');
-    } catch (err) {
-        console.error('❌ Database connection failed:', err);
-    }
-}
+app.use(cors(corsOptions));
+app.use(express.json()); // Middleware for JSON parsing
 
-connectToDatabase();
+// ✅ Connect to MongoDB
+mongoose
+  .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log("✅ Connected to MongoDB"))
+  .catch(err => console.error("❌ MongoDB Connection Error:", err));
 
-// Save Trainer Availability
-app.post('/trainer/availability', async (req, res) => {
+// ✅ MongoDB Schema for Trainer Availability
+const trainerAvailabilitySchema = new mongoose.Schema({
+  trainerId: String,
+  availability: Object // Store availability slots in an object
+});
+const TrainerAvailability = mongoose.model("TrainerAvailability", trainerAvailabilitySchema);
+
+// ✅ Route: Save Trainer Availability
+app.post("/saveAvailability", async (req, res) => {
+  try {
+    console.log("📥 Received Trainer Availability Data:", req.body);
     const { trainerId, availability } = req.body;
-    try {
-        await db.collection('trainer_availability').updateOne(
-            { trainer_id: trainerId },
-            { $set: { availability } },
-            { upsert: true }
-        );
-        res.status(200).json({ message: '✅ Availability saved!' });
-    } catch (err) {
-        res.status(500).json({ error: '❌ Failed to save availability', details: err });
-    }
+
+    await TrainerAvailability.findOneAndUpdate(
+      { trainerId },
+      { availability },
+      { upsert: true, new: true }
+    );
+
+    console.log("✅ Availability Saved Successfully");
+    res.status(200).json({ message: "Availability saved successfully" });
+  } catch (error) {
+    console.error("❌ Error saving availability:", error);
+    res.status(500).json({ error: "Failed to save availability" });
+  }
 });
 
-// Get Trainer Availability
-app.get('/trainer/availability', async (req, res) => {
-    const { trainerId } = req.query;
-    try {
-        const trainer = await db.collection('trainer_availability').findOne({ trainer_id: trainerId });
-        res.status(200).json(trainer ? trainer.availability : {});
-    } catch (err) {
-        res.status(500).json({ error: '❌ Failed to fetch availability', details: err });
+// ✅ Route: Get Trainer Availability
+app.get("/getAvailability", async (req, res) => {
+  try {
+    const trainerId = req.query.trainerId;
+    const trainerData = await TrainerAvailability.findOne({ trainerId });
+
+    if (!trainerData) {
+      return res.status(404).json({ error: "No availability found" });
     }
+
+    console.log("✅ Sending Trainer Availability Data");
+    res.json(trainerData);
+  } catch (error) {
+    console.error("❌ Error fetching availability:", error);
+    res.status(500).json({ error: "Failed to fetch availability" });
+  }
 });
 
-// Fetch Today's Sessions
-app.get('/trainer/sessions', async (req, res) => {
-    const { trainerId, date } = req.query;
-    try {
-        const sessions = await db.collection('sessions').find({ trainer_id: trainerId, date }).toArray();
-        res.status(200).json(sessions);
-    } catch (err) {
-        res.status(500).json({ error: '❌ Failed to fetch sessions', details: err });
-    }
+// ✅ Route: Default API Response
+app.get("/", (req, res) => {
+  res.send("PowerBoxing Trainer API is running ✅");
 });
 
-// Save Session Assignments
-app.post('/trainer/sessions', async (req, res) => {
-    const { sessionId, assignments } = req.body;
-    try {
-        await db.collection('sessions').updateOne(
-            { session_id: sessionId },
-            { $set: { assignments } },
-            { upsert: true }
-        );
-        res.status(200).json({ message: '✅ Session assignments saved!' });
-    } catch (err) {
-        res.status(500).json({ error: '❌ Failed to save session assignments', details: err });
-    }
-});
-
-const PORT = 5000;
+// ✅ Start the Server
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
