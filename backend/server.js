@@ -1,85 +1,70 @@
 require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+require("dotenv").config();
 
 const app = express();
-app.use(express.json()); // Enable JSON body parsing
+const PORT = process.env.PORT || 5000;
 
-// ✅ Enable CORS for your frontend domain
-app.use(cors({
-    origin: "https://powerboxing.fun", // Allow frontend domain
-    methods: ["GET", "POST"],
-    credentials: true
-}));
+// ✅ ENABLE CORS PERMANENTLY
+app.use(
+    cors({
+        origin: "*", // Allows all origins
+        methods: "GET,POST,PUT,DELETE,OPTIONS",
+        allowedHeaders: "Content-Type,Authorization"
+    })
+);
 
-// ✅ MongoDB Connection
-const mongoURI = process.env.MONGO_URI || "your-mongodb-uri-here";
-mongoose.connect(mongoURI, { 
-    useNewUrlParser: true, 
-    useUnifiedTopology: true 
-})
-.then(() => console.log("✅ Connected to MongoDB"))
-.catch(err => console.error("❌ MongoDB connection error:", err));
+app.use(express.json());
 
-// ✅ Trainer Schema & Model
+// ✅ CONNECT TO MONGODB
+mongoose
+    .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log("✅ Connected to MongoDB"))
+    .catch((err) => console.error("❌ MongoDB Connection Error:", err));
+
+// ✅ TRAINER SCHEMA & MODEL
 const trainerSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
-    password: { type: String, required: true }
+    username: String,
+    password: String,
+    availability: Array
 });
+
 const Trainer = mongoose.model("Trainer", trainerSchema);
 
-// ✅ Trainer Signup Route (Create New Trainer)
-app.post("/register", async (req, res) => {
-    try {
-        const { username, password } = req.body;
-        if (!username || !password) {
-            return res.status(400).json({ message: "All fields are required." });
-        }
-
-        const existingTrainer = await Trainer.findOne({ username });
-        if (existingTrainer) {
-            return res.status(400).json({ message: "Trainer already exists." });
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newTrainer = new Trainer({ username, password: hashedPassword });
-        await newTrainer.save();
-
-        res.status(201).json({ message: "Trainer created successfully!" });
-    } catch (error) {
-        res.status(500).json({ message: "Server error", error });
-    }
-});
-
-// ✅ Trainer Login Route
+// ✅ LOGIN ROUTE
 app.post("/login", async (req, res) => {
+    const { username, password } = req.body;
+
     try {
-        const { username, password } = req.body;
-
-        const trainer = await Trainer.findOne({ username });
-        if (!trainer) {
-            return res.status(401).json({ message: "Invalid username or password" });
+        const trainer = await Trainer.findOne({ username, password });
+        if (trainer) {
+            res.json({ success: true, message: "Login successful!", trainer });
+        } else {
+            res.status(401).json({ success: false, message: "Invalid credentials" });
         }
-
-        const isPasswordValid = await bcrypt.compare(password, trainer.password);
-        if (!isPasswordValid) {
-            return res.status(401).json({ message: "Invalid username or password" });
-        }
-
-        // Generate JWT Token (optional)
-        const token = jwt.sign({ id: trainer._id, username: trainer.username }, "your-secret-key", { expiresIn: "1h" });
-
-        res.status(200).json({ message: "Login successful", token });
-    } catch (error) {
-        res.status(500).json({ message: "Server error", error });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Server error", error: err.message });
     }
 });
 
-// ✅ Start Server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+// ✅ SAVE TRAINER AVAILABILITY
+app.post("/saveAvailability", async (req, res) => {
+    const { username, availability } = req.body;
+
+    try {
+        const trainer = await Trainer.findOneAndUpdate(
+            { username },
+            { availability },
+            { new: true, upsert: true }
+        );
+        res.json({ success: true, message: "Availability updated!", trainer });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Server error", error: err.message });
+    }
 });
+
+// ✅ START SERVER
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
