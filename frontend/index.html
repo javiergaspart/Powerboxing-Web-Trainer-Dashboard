@@ -9,20 +9,29 @@
 <body>
 
     <h1>Trainer Dashboard</h1>
-    <button onclick="showTab('availability-tab')">Trainer Availability</button>
-    <button onclick="showTab('sessions-tab')">Session Management</button>
 
-    <div id="availability-tab">
-        <h2>Set Trainer Availability</h2>
-        <button onclick="saveAvailability()">Save Availability</button>
-        <div id="calendar"></div>
+    <div id="login-container">
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+    </div>
+
+    <div id="dashboard" style="display: none;">
+        <button onclick="showTab('availability-tab')">Trainer Availability</button>
+        <button onclick="showTab('sessions-tab')">Session Management</button>
+
+        <div id="availability-tab" class="tab-content">
+            <h2>Set Trainer Availability</h2>
+            <button onclick="saveAvailability()">Save Availability</button>
+            <div id="availability-calendar"></div>
+        </div>
+
+        <div id="sessions-tab" class="tab-content" style="display: none;">
+            <h2>Manage Sessions</h2>
+            <div id="session-list"></div>
+        </div>
     </div>
 
     <script src="script.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            generateCalendar();
-        });
-    </script>
 </body>
 </html>

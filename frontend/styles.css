@@ -1,19 +1,45 @@
-.time-slot {
-    width: 50px;
-    height: 30px;
-    margin: 5px;
+body {
+    font-family: Arial, sans-serif;
     text-align: center;
-    line-height: 30px;
+}
+
+button {
+    margin: 10px;
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
     cursor: pointer;
-    background-color: lightgray;
-    border-radius: 5px;
+}
+
+.tab-content {
+    margin-top: 20px;
+}
+
+.day-column {
+    display: inline-block;
+    margin: 10px;
+    padding: 10px;
+    border: 1px solid black;
+}
+
+.day-header {
+    font-weight: bold;
+}
+
+.time-slot {
+    padding: 5px;
+    margin: 5px 0;
+    cursor: pointer;
+    background-color: red;
+    color: white;
 }
 
 .time-slot.available {
-    background-color: lightgreen;
+    background-color: green;
 }
 
 .time-slot.past {
-    background-color: gray;
+    background-color: grey;
     pointer-events: none;
 }
