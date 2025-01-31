@@ -7,22 +7,22 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Trainer Dashboard</h1>
-    
-    <button id="availabilityTab">Trainer Availability</button>
-    <button id="sessionsTab">Session Management</button>
 
-    <div id="availabilitySection">
+    <h1>Trainer Dashboard</h1>
+    <button onclick="showTab('availability-tab')">Trainer Availability</button>
+    <button onclick="showTab('sessions-tab')">Session Management</button>
+
+    <div id="availability-tab">
         <h2>Set Trainer Availability</h2>
-        <button id="saveAvailability">Save Availability</button>
+        <button onclick="saveAvailability()">Save Availability</button>
         <div id="calendar"></div>
     </div>
 
-    <div id="sessionsSection" style="display: none;">
-        <h2>Manage Sessions</h2>
-        <div id="sessionList"></div>
-    </div>
-
     <script src="script.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            generateCalendar();
+        });
+    </script>
 </body>
 </html>
