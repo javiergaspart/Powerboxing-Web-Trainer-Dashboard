@@ -1,85 +1,63 @@
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
-require("dotenv").config({ path: "./.env" });
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// ✅ Enable CORS for the frontend
-const corsOptions = {
-    origin: "https://powerboxing.fun", // Ensure this is the correct frontend URL
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    credentials: true,
-    optionsSuccessStatus: 204,
-};
-app.use(cors(corsOptions));
+// Middleware
 app.use(express.json());
+app.use(cors({ origin: process.env.FRONTEND_URL }));
 
-// ✅ MongoDB Connection
-const MONGO_URI = process.env.MONGO_URI || "your-mongodb-connection-string";
-mongoose.connect(MONGO_URI, {
+// MongoDB Connection
+mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true
-})
-.then(() => console.log("✅ Connected to MongoDB"))
-.catch(err => console.error("❌ MongoDB Connection Error:", err));
+}).then(() => console.log('✅ Connected to MongoDB'))
+  .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-// ✅ Define Trainer Availability Schema
-const trainerAvailabilitySchema = new mongoose.Schema({
+// Trainer Availability Schema
+const TrainerAvailabilitySchema = new mongoose.Schema({
     trainerId: String,
-    availability: Array,
-    updatedAt: { type: Date, default: Date.now }
+    date: String,
+    slots: Array
 });
 
-const TrainerAvailability = mongoose.model("TrainerAvailability", trainerAvailabilitySchema);
+const TrainerAvailability = mongoose.model('TrainerAvailability', TrainerAvailabilitySchema);
 
-// ✅ Health Check Endpoint
-app.get("/api/status", (req, res) => {
-    res.json({ status: "ok" });
-});
-
-// ✅ Save Trainer Availability
-app.post("/saveAvailability", async (req, res) => {
+// Save Trainer Availability
+app.post('/saveAvailability', async (req, res) => {
     try {
-        const { trainerId, availability } = req.body;
-        if (!trainerId || !availability) {
-            return res.status(400).json({ error: "Trainer ID and availability are required." });
+        const { trainerId, date, slots } = req.body;
+
+        let availability = await TrainerAvailability.findOne({ trainerId, date });
+
+        if (availability) {
+            availability.slots = slots;
+            await availability.save();
+        } else {
+            await TrainerAvailability.create({ trainerId, date, slots });
         }
 
-        // Save or update availability in MongoDB
-        const result = await TrainerAvailability.findOneAndUpdate(
-            { trainerId },
-            { availability, updatedAt: new Date() },
-            { upsert: true, new: true }
-        );
-
-        console.log("✅ Availability updated:", result);
-        res.json({ success: true, message: "Availability saved successfully!", data: result });
+        res.json({ success: true, message: 'Availability saved successfully!' });
     } catch (error) {
-        console.error("❌ Error saving availability:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
     }
 });
 
-// ✅ Get Trainer Availability
-app.get("/getAvailability/:trainerId", async (req, res) => {
+// Fetch Trainer Availability
+app.get('/getAvailability/:trainerId', async (req, res) => {
     try {
         const trainerId = req.params.trainerId;
-        const availability = await TrainerAvailability.findOne({ trainerId });
-
-        if (!availability) {
-            return res.status(404).json({ error: "No availability found for this trainer." });
-        }
-
-        res.json(availability);
+        const availability = await TrainerAvailability.find({ trainerId });
+        res.json({ success: true, availability });
     } catch (error) {
-        console.error("❌ Error fetching availability:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
     }
 });
 
-// ✅ Start Server
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+// Start Server
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
