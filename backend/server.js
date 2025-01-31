@@ -1,69 +1,85 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
-const bodyParser = require("body-parser");
-require("dotenv").config();
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+app.use(express.json()); // Enable JSON body parsing
 
-// CORS Configuration
+// ✅ Enable CORS for your frontend domain
 app.use(cors({
-    origin: "https://powerboxing.fun", // Allow frontend requests
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    origin: "https://powerboxing.fun", // Allow frontend domain
+    methods: ["GET", "POST"],
     credentials: true
 }));
 
-app.use(bodyParser.json());
+// ✅ MongoDB Connection
+const mongoURI = process.env.MONGO_URI || "your-mongodb-uri-here";
+mongoose.connect(mongoURI, { 
+    useNewUrlParser: true, 
+    useUnifiedTopology: true 
+})
+.then(() => console.log("✅ Connected to MongoDB"))
+.catch(err => console.error("❌ MongoDB connection error:", err));
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).then(() => console.log("✅ Connected to MongoDB"))
-  .catch(err => console.error("❌ MongoDB connection error:", err));
-
-// Define User Schema
-const UserSchema = new mongoose.Schema({
-    username: String,
-    password: String
+// ✅ Trainer Schema & Model
+const trainerSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true }
 });
-const User = mongoose.model("User", UserSchema);
+const Trainer = mongoose.model("Trainer", trainerSchema);
 
-// 🔹 Login Route
+// ✅ Trainer Signup Route (Create New Trainer)
+app.post("/register", async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        if (!username || !password) {
+            return res.status(400).json({ message: "All fields are required." });
+        }
+
+        const existingTrainer = await Trainer.findOne({ username });
+        if (existingTrainer) {
+            return res.status(400).json({ message: "Trainer already exists." });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newTrainer = new Trainer({ username, password: hashedPassword });
+        await newTrainer.save();
+
+        res.status(201).json({ message: "Trainer created successfully!" });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error });
+    }
+});
+
+// ✅ Trainer Login Route
 app.post("/login", async (req, res) => {
     try {
         const { username, password } = req.body;
-        const user = await User.findOne({ username, password });
 
-        if (user) {
-            res.status(200).json({ success: true, message: "Login successful" });
-        } else {
-            res.status(401).json({ success: false, message: "Invalid credentials" });
+        const trainer = await Trainer.findOne({ username });
+        if (!trainer) {
+            return res.status(401).json({ message: "Invalid username or password" });
         }
+
+        const isPasswordValid = await bcrypt.compare(password, trainer.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: "Invalid username or password" });
+        }
+
+        // Generate JWT Token (optional)
+        const token = jwt.sign({ id: trainer._id, username: trainer.username }, "your-secret-key", { expiresIn: "1h" });
+
+        res.status(200).json({ message: "Login successful", token });
     } catch (error) {
-        console.error("Login error:", error);
-        res.status(500).json({ success: false, message: "Server error" });
+        res.status(500).json({ message: "Server error", error });
     }
 });
 
-// 🔹 Save Trainer Availability Route
-app.post("/saveAvailability", async (req, res) => {
-    try {
-        console.log("Received availability:", req.body);
-        res.status(200).json({ success: true, message: "Availability saved" });
-    } catch (error) {
-        console.error("Error saving availability:", error);
-        res.status(500).json({ success: false, message: "Server error" });
-    }
-});
-
-// Default Route
-app.get("/", (req, res) => {
-    res.send("Trainer Backend is Running!");
-});
-
-// Start Server
+// ✅ Start Server
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });
